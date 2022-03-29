@@ -38,16 +38,12 @@ public class ProductController {
     @GetMapping()
     public ResponseEntity<List<Product>> getAllProducts() throws Exception {
         List<Product> products = productRepository.findAll();
-        for (Product product : products) {
-            product.setPriceEur(currencyUtility.hrkToEur(product.getPriceHrk()));
-        }
         return ResponseEntity.ok(products);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProduct(@PathVariable(value = "id") Long id) throws Exception {
         Product product = productRepository.findById(id).orElseThrow(() -> new CustomRequestErrorException( "id", HttpStatus.NOT_FOUND, "id", "Product not found"));
-        product.setPriceEur(currencyUtility.hrkToEur(product.getPriceHrk()));
         return ResponseEntity.ok(product);
     }
 
@@ -83,7 +79,9 @@ public class ProductController {
                 throw new CustomRequestErrorException( "code", HttpStatus.BAD_REQUEST, "code", "Duplicate code");
             }
         }
-        product.setPriceEur(currencyUtility.hrkToEur(product.getPriceHrk()));
+        if (product.getPriceHrk() != existingProduct.getPriceHrk()) {
+            product.setPriceEur(currencyUtility.hrkToEur(product.getPriceHrk()));
+        }
         Product updatedProduct = productRepository.save(product);
         return ResponseEntity.ok(updatedProduct);
     }

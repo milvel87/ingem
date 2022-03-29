@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(classes = InterviewApplicationTests.class)
 @AutoConfigureMockMvc
-public class ProductControllerIT {
+public class ProductControllerTest {
 
     @Autowired
     ProductRepository productRepository;
@@ -74,16 +74,20 @@ public class ProductControllerIT {
     @Order(2)
     void testCreateProductDuplicateCode() throws Exception {
         Product testProduct = initProduct();
+        cleanUp(testProduct.getCode());
+        productRepository.save(testProduct);
+        Product tempProduct = initProduct();
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/products")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testProduct))
+                .content(objectMapper.writeValueAsString(tempProduct))
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
         assertEquals("Duplicate code", objectMapper.readValue(mvcResult.getResponse().getContentAsString(), CustomRequestErrorResponse.class).getErrors().get("code").get(0));
+        cleanUp(testProduct.getCode());
     }
 
     @Test
@@ -123,6 +127,10 @@ public class ProductControllerIT {
     @Test
     @Order(5)
     void testGetAllProducts() throws Exception {
+        Product testProduct = initProduct();
+        cleanUp(testProduct.getCode());
+        productRepository.save(testProduct);
+
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
@@ -154,7 +162,6 @@ public class ProductControllerIT {
     @Test
     @Order(7)
     void testGetProductByIdNotFound() throws Exception {
-
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/products/{id}", 999L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
@@ -168,25 +175,28 @@ public class ProductControllerIT {
     @Test
     @Order(8)
     void testUpdateProduct() throws Exception {
-        Product testProduct = productRepository.findAll().get(0);
-        testProduct.setName("Edited Name");
+        Product testProduct = initProduct();
+        cleanUp(testProduct.getCode());
+        productRepository.save(testProduct);
+        Product tempProduct = productRepository.findAll().get(0);
+        tempProduct.setName("Edited Name");
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.put("/products")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testProduct))
+                .content(objectMapper.writeValueAsString(tempProduct))
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andReturn();
 
         Product product = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Product.class);
-        assertEquals(testProduct, product);
+        assertEquals(tempProduct, product);
     }
 
     @Test
     @Order(9)
     void testUpdateProductByIdNotFound() throws Exception {
-        Product testProduct = productRepository.findAll().get(0);
+        Product testProduct = initProduct();
         testProduct.setId(999L);
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.put("/products")
@@ -221,7 +231,6 @@ public class ProductControllerIT {
                 .andReturn();
 
         assertEquals("Duplicate code", objectMapper.readValue(mvcResult.getResponse().getContentAsString(), CustomRequestErrorResponse.class).getErrors().get("code").get(0));
-        cleanUp(testCode);
     }
 
     @Test

@@ -40,7 +40,7 @@ public class Product {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "is_avaliable")
+    @Column(name = "is_available")
     private Boolean isAvailable;
 
     public Long getId() {
